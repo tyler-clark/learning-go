@@ -8,22 +8,29 @@ import (
 	"regexp"
 )
 
-var templates = template.Must(template.ParseFiles("edit.html", "view.html"))
-
-var validPath = regexp.MustCompile("^/(edit|save|view)/([a-zA-Z0-9]+)$")
+var (
+	  dataDir     = "data/"
+    templateDir = "tmpl/"
+    templates   = template.Must(template.ParseFiles(templateDir+"edit.html", templateDir+"view.html"))
+    validPath   = regexp.MustCompile("^/(edit|save|view)/([a-zA-Z0-9]+)$")
+)
 
 type Page struct {
     Title string
     Body  []byte
 }
 
+func fileName(title string) string {
+	return dataDir+title+".txt"
+}
+
 func (p *Page) save() error {
-    filename := p.Title + ".txt"
+    filename := fileName(p.Title)
     return ioutil.WriteFile(filename, p.Body, 0600)
 }
 
 func loadPage(title string) (*Page, error) {
-    filename := title + ".txt"
+    filename := fileName(title)
     body, err := ioutil.ReadFile(filename)
     if err != nil {
         return nil, err
