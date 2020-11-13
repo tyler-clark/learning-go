@@ -23,6 +23,7 @@ var (
 type Page struct {
     Title string
     Body  []byte
+    DisplayBody template.HTML
 }
 
 func fileName(title string) string {
@@ -61,6 +62,7 @@ func viewHandler(w http.ResponseWriter, r *http.Request, title string) {
     	regx := regexp.MustCompile(fmt.Sprintf("(%s)", name))
     	p.Body = regx.ReplaceAll(p.Body, []byte("<a href=\"/view/"+name+"\">"+name+"</a>"))
     }
+    p.DisplayBody = template.HTML(p.Body)
     renderTemplate(w, "view", p)
 }
 
