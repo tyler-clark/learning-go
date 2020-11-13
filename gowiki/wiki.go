@@ -1,11 +1,14 @@
 package main
 
 import (
+	"fmt"
 	"html/template"
 	"io/ioutil"
 	"log"
 	"net/http"
+	"path/filepath"
 	"regexp"
+	"strings"
 )
 
 var (
@@ -13,6 +16,8 @@ var (
     templateDir = "tmpl/"
     templates   = template.Must(template.ParseFiles(templateDir+"edit.html", templateDir+"view.html"))
     validPath   = regexp.MustCompile("^/(edit|save|view)/([a-zA-Z0-9]+)$")
+
+    fileNames []string
 )
 
 type Page struct {
@@ -52,6 +57,10 @@ func viewHandler(w http.ResponseWriter, r *http.Request, title string) {
     	http.Redirect(w, r, "/edit/"+title, http.StatusFound)
     	return
     }
+    for _, name := range fileNames {
+    	regx := regexp.MustCompile(fmt.Sprintf("(%s)", name))
+    	p.Body = regx.ReplaceAll(p.Body, []byte("<a href=\"/view/"+name+"\">"+name+"</a>"))
+    }
     renderTemplate(w, "view", p)
 }
 
@@ -89,7 +98,24 @@ func makeHandler(fn func (http.ResponseWriter, *http.Request, string)) http.Hand
   }
 }
 
+func fileNameWithoutExtension(fileName string) string {
+	  return strings.TrimSuffix(fileName, filepath.Ext(fileName))
+}
+
+func loadFileNames() error {
+		files, err := ioutil.ReadDir("data")
+		if err != nil {
+	    return err
+		}
+		for _, f := range files {
+		    fileNames = append(fileNames, fileNameWithoutExtension(f.Name()))
+		}
+		return nil
+
+}
+
 func main() {
+	  loadFileNames()
     http.HandleFunc("/view/", makeHandler(viewHandler))
     http.HandleFunc("/edit/", makeHandler(editHandler))
     http.HandleFunc("/save/", makeHandler(saveHandler))
